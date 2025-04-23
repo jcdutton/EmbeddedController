@@ -82,7 +82,7 @@ static unsigned int user_current_limit = -1U;
 test_export_static timestamp_t shutdown_target_time;
 static timestamp_t precharge_start_time;
 static struct sustain_soc sustain_soc;
-static struct sustain_soc3 sustain_soc3[4];
+struct sustain_soc3 sustain_soc3[4];
 int sustain3_slot = 0;
 static struct current_limit {
 	uint32_t value; /* Charge limit to apply, in mA */
