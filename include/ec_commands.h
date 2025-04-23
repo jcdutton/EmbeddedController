@@ -4486,6 +4486,39 @@ struct ec_response_charge_control {
 } __ec_align4;
 
 /*****************************************************************************/
+/* Charge control3 commands */
+
+#define EC_CMD_CHARGE_CONTROL3 0x3e96
+#define EC_VER_CHARGE_CONTROL3 3
+
+struct ec_params_charge_control3 {
+	uint32_t mode; /* enum charge_control_mode */
+
+	uint8_t cmd; /* enum ec_charge_control3_cmd. */
+	uint8_t slot; /* enum ec_charge_control_flag (v3+) */
+	/*
+	 * Lower and upper thresholds for battery sustainer. This struct isn't
+	 * named to avoid tainting foreign projects' name spaces.
+	 */
+	struct {
+		int8_t lower; /* Display SoC in percentage. */
+		int8_t upper; /* Display SoC in percentage. */
+		int8_t discharge;
+	} sustain_soc3;
+} __ec_align4;
+
+struct ec_response_charge_control3 {
+	uint8_t slot;
+	struct { /* Battery sustainer thresholds */
+		int8_t lower;
+		int8_t upper;
+		int8_t discharge;
+	} sustain_soc3[4];
+	uint8_t reserved1;
+	uint8_t reserved2;
+} __ec_align4;
+
+/*****************************************************************************/
 
 /* Snapshot console output buffer for use by EC_CMD_CONSOLE_READ. */
 #define EC_CMD_CONSOLE_SNAPSHOT 0x0097

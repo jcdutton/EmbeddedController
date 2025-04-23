@@ -119,6 +119,12 @@ struct sustain_soc {
 	uint8_t flags; /* enum ec_charge_control_flag */
 };
 
+struct sustain_soc3 {
+	int8_t lower;
+	int8_t upper;
+	int8_t discharge;
+};
+
 #define BAT_MAX_DISCHG_CURRENT 5000 /* mA */
 #define BAT_LOW_VOLTAGE_THRESH 3200 /* mV */
 
