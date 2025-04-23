@@ -56,6 +56,8 @@ static int sustainer_upper = 100;
 
 static uint8_t charging_maximum_level = EC_CHARGE_LIMIT_RESTORE;
 static uint8_t old_charger_limit;
+extern int sustain3_slot;
+extern struct sustain_soc3 sustain_soc3[4];
 
 static void extender_init(void)
 {
@@ -80,11 +82,30 @@ void charger_sustainer_reset(void)
 {
 	old_charger_limit = 0;
 	//battery_sustainer_set(-1, -1);
-	int rv = set_chg_ctrl_mode(CHARGE_CONTROL_NORMAL);
-	CPRINTS("%s: %s control mode to %s, rv=%d", __func__,
-		rv == EC_SUCCESS ? "Switched" : "Failed to switch",
-		mode_text[CHARGE_CONTROL_NORMAL],
-		rv);
+	sustain3_slot = 0;
+	//int rv = set_chg_ctrl_mode(CHARGE_CONTROL_NORMAL);
+	//CPRINTS("%s: %s control mode to %s, rv=%d", __func__,
+	//	rv == EC_SUCCESS ? "Switched" : "Failed to switch",
+	//	mode_text[CHARGE_CONTROL_NORMAL],
+	//	rv);
+}
+
+int battery_extender_sustain3_set(int slot, int lower, int upper, int discharge);
+
+int battery_extender_sustain3_set(int slot, int lower, int upper, int discharge) {
+	if ((slot < 2) || (slot >=4)) return 0;
+	sustain_soc3[slot].lower = lower;
+	sustain_soc3[slot].upper = upper;
+	sustain_soc3[slot].discharge = discharge;
+	return 1;
+}
+
+int battery_extender_sustain3_set_slot(int slot);
+
+int battery_extender_sustain3_set_slot(int slot) {
+	if ((slot < 2) || (slot >=4)) return 0;
+	sustain3_slot = slot;
+	return 1;
 }
 
 static void battery_percentage_control(void)
@@ -159,12 +180,16 @@ void battery_extender(void)
 			timestamp_expired(batt_extender_deadline_stage2, &now)) {
 		batt_extender_deadline_stage2.val = 0;
 		stage = BATT_EXTENDER_STAGE_2;
-		battery_sustainer_set(MIN(85, sustainer_lower), MIN(87, sustainer_upper));
+		battery_extender_sustain3_set(3, MIN(83, sustainer_lower), MIN(85, sustainer_upper), MIN(87, sustainer_upper));
+		battery_extender_sustain3_set_slot(3);
+		//battery_sustainer_set(MIN(85, sustainer_lower), MIN(87, sustainer_upper));
 	} else if (batt_extender_deadline.val &&
 			timestamp_expired(batt_extender_deadline, &now)) {
 		batt_extender_deadline.val = 0;
 		stage = BATT_EXTENDER_STAGE_1;
-		battery_sustainer_set(MIN(90, sustainer_lower), MIN(95, sustainer_upper));
+		battery_extender_sustain3_set(2, MIN(90, sustainer_lower), MIN(93, sustainer_upper), MIN(95, sustainer_upper));
+		battery_extender_sustain3_set_slot(2);
+		//battery_sustainer_set(MIN(90, sustainer_lower), MIN(95, sustainer_upper));
 	}
 }
 DECLARE_HOOK(HOOK_SECOND, battery_extender, HOOK_PRIO_DEFAULT);
