@@ -84,6 +84,7 @@ test_export_static timestamp_t shutdown_target_time;
 static timestamp_t precharge_start_time;
 static struct sustain_soc sustain_soc;
 struct sustain_soc3 sustain_soc3[4];
+uint32_t charge_state_change_counter = 0;
 int sustain3_slot = 0;
 static struct current_limit {
 	uint32_t value; /* Charge limit to apply, in mA */
@@ -319,6 +320,7 @@ static void dump_charge_state(void)
 	ccprintf("Battery sustainer = %s (%d%% ~ %d%%)\n",
 		 battery_sustainer_enabled() ? "on" : "off", sustain_soc.lower,
 		 sustain_soc.upper);
+	ccprintf("Charge state change counter = %d\n", charge_state_change_counter);
 	ccprintf("Sustainer slot = %d\n", sustain3_slot);
 	for (int n = 0; n < 4; n++) {
 		ccprintf("Sustainer slot[%d] (%d%% ~ %d%% - %d%%)\n", 
@@ -619,6 +621,9 @@ int set_chg_ctrl_mode(enum ec_charge_control_mode mode)
 			CPRINTS("%s: Returning due to failure of charger_discharge_on_ac() rv=%d", __func__, rv);
 			return rv;
 		}
+	}
+	if (local_state.chg_ctl_mode != mode) {
+		charge_state_change_counter++;
 	}
 
 	/* Commit all atomically */
@@ -2145,6 +2150,7 @@ charge_command_charge_control3(struct host_cmd_handler_args *args)
 		sustain_soc3[slot].discharge = p->sustain_soc3.discharge;
 	} else if (p->cmd == EC_CHARGE_CONTROL_CMD_GET) {
 		for (int n = 0; n < 4; n++) {
+			r->charge_state_change_counter = charge_state_change_counter;
 			r->slot = sustain3_slot;
 			r->sustain_soc3[n].lower = sustain_soc3[n].lower;
 			r->sustain_soc3[n].upper = sustain_soc3[n].upper;
