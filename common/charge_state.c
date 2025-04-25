@@ -2266,9 +2266,10 @@ charge_command_charge_control3(struct host_cmd_handler_args *args)
 		sustain_soc3[slot].upper = p->sustain_soc3.upper;
 		sustain_soc3[slot].discharge = p->sustain_soc3.discharge;
 	} else if (p->cmd == EC_CHARGE_CONTROL_CMD_GET) {
+		r->mode = get_chg_ctrl_mode();
+		r->charge_state_change_counter = charge_state_change_counter;
+		r->slot = sustain3_slot;
 		for (int n = 0; n < 4; n++) {
-			r->charge_state_change_counter = charge_state_change_counter;
-			r->slot = sustain3_slot;
 			r->sustain_soc3[n].lower = sustain_soc3[n].lower;
 			r->sustain_soc3[n].upper = sustain_soc3[n].upper;
 			r->sustain_soc3[n].discharge = sustain_soc3[n].discharge;

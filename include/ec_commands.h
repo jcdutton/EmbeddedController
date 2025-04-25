@@ -4508,6 +4508,7 @@ struct ec_params_charge_control3 {
 } __ec_align4;
 
 struct ec_response_charge_control3 {
+	uint32_t mode; /* enum charge_control_mode */
 	uint32_t charge_state_change_counter;
 	uint8_t slot;
 	struct { /* Battery sustainer thresholds */
