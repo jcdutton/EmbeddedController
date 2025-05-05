@@ -103,7 +103,7 @@ int battery_extender_sustain3_set(int slot, int lower, int upper, int discharge)
 int battery_extender_sustain3_set_slot(int slot);
 
 int battery_extender_sustain3_set_slot(int slot) {
-	if ((slot < 2) || (slot >=4)) return 0;
+	if ((slot < 0) || (slot >=4)) return 0;
 	sustain3_slot = slot;
 	return 1;
 }
@@ -140,6 +140,7 @@ void battery_extender(void)
 	/* don't runnig extender when unit in factory mode */
 	if (batt_extender_disable || factory_status()) {
 		stage = BATT_EXTENDER_STAGE_0;
+		battery_extender_sustain3_set_slot(0);
 		reset_deadline.val = 0;
 		batt_extender_deadline.val = 0;
 		batt_extender_deadline_stage2.val = 0;
@@ -166,6 +167,7 @@ void battery_extender(void)
 		reset_deadline.val = 0;
 
 		stage = BATT_EXTENDER_STAGE_0;
+		battery_extender_sustain3_set_slot(0);
 		batt_extender_deadline.val =
 			now.val + battery_extender_trigger;
 		batt_extender_deadline_stage2.val =
@@ -180,14 +182,20 @@ void battery_extender(void)
 			timestamp_expired(batt_extender_deadline_stage2, &now)) {
 		batt_extender_deadline_stage2.val = 0;
 		stage = BATT_EXTENDER_STAGE_2;
-		battery_extender_sustain3_set(3, MIN(83, sustainer_lower), MIN(85, sustainer_upper), MIN(87, sustainer_upper));
+		int slot3 = sustain3_slot;
+		int sustainer_discharge3 = sustain_soc3[slot3].discharge;
+		if (sustainer_discharge3 <= sustain_soc3[slot3].upper) sustainer_discharge3 =  110;
+		battery_extender_sustain3_set(3, MIN(83, sustain_soc3[slot3].lower), MIN(85, sustain_soc3[slot3].upper), MIN(87, sustainer_discharge3));
 		battery_extender_sustain3_set_slot(3);
 		//battery_sustainer_set(MIN(85, sustainer_lower), MIN(87, sustainer_upper));
 	} else if (batt_extender_deadline.val &&
 			timestamp_expired(batt_extender_deadline, &now)) {
 		batt_extender_deadline.val = 0;
 		stage = BATT_EXTENDER_STAGE_1;
-		battery_extender_sustain3_set(2, MIN(90, sustainer_lower), MIN(93, sustainer_upper), MIN(95, sustainer_upper));
+		int slot3 = sustain3_slot;
+		int sustainer_discharge3 = sustain_soc3[slot3].discharge;
+		if (sustainer_discharge3 <= sustain_soc3[slot3].upper) sustainer_discharge3 =  110;
+		battery_extender_sustain3_set(2, MIN(90, sustain_soc3[slot3].lower), MIN(93, sustain_soc3[slot3].upper), MIN(95, sustainer_discharge3));
 		battery_extender_sustain3_set_slot(2);
 		//battery_sustainer_set(MIN(90, sustainer_lower), MIN(95, sustainer_upper));
 	}
@@ -237,6 +245,7 @@ static enum ec_status battery_extender_hc(struct host_cmd_handler_args *args)
 					charger_sustainer_reset();
 				}
 				stage = BATT_EXTENDER_STAGE_0;
+				battery_extender_sustain3_set_slot(0);
 			}
 		}
 		return EC_SUCCESS;
