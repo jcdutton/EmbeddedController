@@ -1444,6 +1444,99 @@ static void command_isl9241_dump(int chgnum)
 	dump_reg_range(chgnum, 0x90, 0x91);
 	dump_reg_range(chgnum, 0xFE, 0xFF);
 }
+static enum ec_error_list command_isl9241_dump_get(int chgnum, uint32_t *regs, int size) {
+	int index = 0;
+	int reg;
+	int regval;
+	int rv;
+	if (size != 33) {
+		ccprintf("ERROR: Size != 31\n");
+		return EC_ERROR_PARAM2;
+	}
+	if (!regs) {
+		ccprintf("ERROR: Regs = NULL\n");
+		return EC_ERROR_PARAM1;
+	}
+	// 2
+	for (reg = 0x14; reg <= 0x15; reg++) {
+		rv = isl9241_read(chgnum, reg, &regval);
+		if (!rv)
+			ccprintf("0x%04x\n", regval);
+		else
+			ccprintf("ERR (%d)\n", rv);
+		regs[index] = regval;
+		index++;
+	}
+	// 8
+	for (reg = 0x38; reg <= 0x40; reg++) {
+		rv = isl9241_read(chgnum, reg, &regval);
+		if (!rv)
+			ccprintf("0x%04x\n", regval);
+		else
+			ccprintf("ERR (%d)\n", rv);
+		regs[index] = regval;
+		index++;
+	}
+	// 1
+	for (reg = 0x43; reg <= 0x43; reg++) {
+		rv = isl9241_read(chgnum, reg, &regval);
+		if (!rv)
+			ccprintf("0x%04x\n", regval);
+		else
+			ccprintf("ERR (%d)\n", rv);
+		regs[index] = regval;
+		index++;
+	}
+
+	// 8
+	for (reg = 0x47; reg <= 0x4F; reg++) {
+		rv = isl9241_read(chgnum, reg, &regval);
+		if (!rv)
+			ccprintf("0x%04x\n", regval);
+		else
+			ccprintf("ERR (%d)\n", rv);
+		regs[index] = regval;
+		index++;
+	}
+
+	// 8
+	for (reg = 0x80; reg <= 0x87; reg++) {
+		rv = isl9241_read(chgnum, reg, &regval);
+		if (!rv)
+			ccprintf("0x%04x\n", regval);
+		else
+			ccprintf("ERR (%d)\n", rv);
+		regs[index] = regval;
+		index++;
+	}
+
+	// 2
+	for (reg = 0x90; reg <= 0x91; reg++) {
+		rv = isl9241_read(chgnum, reg, &regval);
+		if (!rv)
+			ccprintf("0x%04x\n", regval);
+		else
+			ccprintf("ERR (%d)\n", rv);
+		regs[index] = regval;
+		index++;
+	}
+
+	// 2
+	for (reg = 0xFE; reg <= 0xFF; reg++) {
+		rv = isl9241_read(chgnum, reg, &regval);
+		if (!rv)
+			ccprintf("0x%04x\n", regval);
+		else
+			ccprintf("ERR (%d)\n", rv);
+		regs[index] = regval;
+		index++;
+	}
+	ccprintf("index=%d\n", index);
+	// Total: 2 + 9 + 1 + 9 + 8 + 2 + 2 = 33
+	cflush();
+	return EC_SUCCESS;
+}
+
 #endif /* CONFIG_CMD_CHARGER_DUMP */
 
 const struct charger_drv isl9241_drv = {
@@ -1477,6 +1570,7 @@ const struct charger_drv isl9241_drv = {
 #endif
 #ifdef CONFIG_CMD_CHARGER_DUMP
 	.dump_registers = &command_isl9241_dump,
+	.dump_registers_get = &command_isl9241_dump_get,
 #endif
 #ifdef CONFIG_CHARGER_DUMP_PROCHOT
 	.dump_prochot = &isl9241_dump_prochot_status,

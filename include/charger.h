@@ -159,6 +159,7 @@ struct charger_drv {
 
 	/* Dumps charger registers */
 	void (*dump_registers)(int chgnum);
+	enum ec_error_list (*dump_registers_get)(int chgnum, uint32_t *reg, int size);
 
 	/* Dumps prochot status information */
 	void (*dump_prochot)(int chgnum);

@@ -12,6 +12,7 @@
 #include "system.h"
 #include "timer.h"
 #include "util.h"
+#include "board_adc.h"
 
 /* Console output macros */
 #define CPRINTS(format, args...) cprints(CC_USBCHARGE, format, ##args)
@@ -72,6 +73,21 @@ int ina2xx_get_current(uint8_t idx)
 	/* Current calibration: LSB = 1mA/bit */
 	return (int)curr;
 }
+
+int ina2xx_get_current2(uint8_t idx)
+{
+	static int shunt_register;
+	int16_t sv = ina2xx_read(0, INA2XX_REG_SHUNT_VOLT);
+	if (board_get_version() >= BOARD_VERSION_7)
+        	shunt_register = 10;
+	else
+		shunt_register = 5;
+	int shunt = INA2XX_SHUNT_UV(sv);
+	int curr = shunt / shunt_register;
+
+	return curr;
+}
+
 
 int ina2xx_get_power(uint8_t idx)
 {
