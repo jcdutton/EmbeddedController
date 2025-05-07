@@ -4728,6 +4728,24 @@ struct ec_response_charge_control3 {
 	uint8_t reserved2;
 } __ec_align4;
 
+
+/* Charge get_regs commands */
+
+#define EC_CMD_CHARGE_GET_REGS 0x3e97
+#define EC_VER_CHARGE_GET_REGS 1
+
+struct ec_params_charge_get_regs {
+	int size; /* enum charge_control_mode */
+	int chgnum; /* charger number */
+} __ec_align4;
+
+struct ec_response_charge_get_regs {
+	uint32_t regs[33];
+	int size; /* number of regs returned */
+	int pd_mV;
+	int pd_mA;
+} __ec_align4;
+
 /*****************************************************************************/
 
 /* Snapshot console output buffer for use by EC_CMD_CONSOLE_READ. */

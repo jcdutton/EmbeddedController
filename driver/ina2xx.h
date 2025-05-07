@@ -120,6 +120,9 @@ int ina2xx_get_voltage(uint8_t idx);
 /* Return current in milliAmps */
 int ina2xx_get_current(uint8_t idx);
 
+/* Return shunt current in milliAmps */
+int ina2xx_get_current2(uint8_t idx);
+
 /* Return power in milliWatts */
 int ina2xx_get_power(uint8_t idx);
 

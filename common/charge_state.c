@@ -23,6 +23,7 @@
 #include "hooks.h"
 #include "host_command.h"
 #include "i2c.h"
+#include "driver/ina2xx.h"
 #include "math_util.h"
 #include "power.h"
 #include "printf.h"
@@ -2168,6 +2169,34 @@ charge_command_charge_control3(struct host_cmd_handler_args *args)
 DECLARE_HOST_COMMAND(EC_CMD_CHARGE_CONTROL3, charge_command_charge_control3,
 		     EC_VER_MASK(3));
 
+static enum ec_status
+charge_command_charge_get_regs(struct host_cmd_handler_args *args)
+{
+	const struct ec_params_charge_get_regs *p = args->params;
+	struct ec_response_charge_get_regs *r = args->response;
+	int rv;
+	int size = p->size; // This has to be 33
+	CPRINTS("p->size = %d\n", p->size);
+	int chgnum = p->chgnum;
+	CPRINTS("p->chgnum = %d\n", p->chgnum);
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+	// Its the first variable in the structure, so it should be aligned.
+	uint32_t *regs = r->regs;
+	CPRINTS("regs = %p, r->regs = %p\n", regs, r->regs);
+	#pragma GCC diagnostic pop
+	rv = chg_chips[chgnum].drv->dump_registers_get(chgnum, regs, size);
+	CPRINTS("rv = %d\n", rv);
+	r->size = size;
+	r->pd_mV = ina2xx_get_voltage(0);
+	r->pd_mA = ina2xx_get_current2(0);
+	args->response_size = sizeof(*r);
+	
+	return rv;
+}
+DECLARE_HOST_COMMAND(EC_CMD_CHARGE_GET_REGS, charge_command_charge_get_regs,
+		     EC_VER_MASK(1));
+	
 static enum ec_status
 charge_command_current_limit(struct host_cmd_handler_args *args)
 {
