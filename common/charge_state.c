@@ -2176,20 +2176,25 @@ charge_command_charge_get_regs(struct host_cmd_handler_args *args)
 	struct ec_response_charge_get_regs *r = args->response;
 	int rv;
 	int size = p->size; // This has to be 33
-	CPRINTS("p->size = %d\n", p->size);
+	//CPRINTS("p->size = %d\n", p->size);
 	int chgnum = p->chgnum;
-	CPRINTS("p->chgnum = %d\n", p->chgnum);
+	//CPRINTS("p->chgnum = %d\n", p->chgnum);
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 	// Its the first variable in the structure, so it should be aligned.
 	uint32_t *regs = r->regs;
-	CPRINTS("regs = %p, r->regs = %p\n", regs, r->regs);
+	//CPRINTS("regs = %p, r->regs = %p\n", regs, r->regs);
 	#pragma GCC diagnostic pop
 	rv = chg_chips[chgnum].drv->dump_registers_get(chgnum, regs, size);
-	CPRINTS("rv = %d\n", rv);
+	//CPRINTS("rv = %d\n", rv);
 	r->size = size;
+#ifdef CONFIG_BOARD_LOTUS
 	r->pd_mV = ina2xx_get_voltage(0);
 	r->pd_mA = ina2xx_get_current2(0);
+#else /* !defined(CONFIG_BOARD_AZALEA) */
+	r->pd_mV = -99999; /* Reading not available */
+	r->pd_mA = -99999; /* Reading not available */
+#endif /* defined(CONFIG_BOARD_AZALEA) */
 	args->response_size = sizeof(*r);
 	
 	return rv;

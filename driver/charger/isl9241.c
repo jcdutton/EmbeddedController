@@ -1470,9 +1470,7 @@ static enum ec_error_list command_isl9241_dump_get(int chgnum, uint32_t *regs, i
 	// 2
 	for (reg = 0x14; reg <= 0x15; reg++) {
 		rv = isl9241_read(chgnum, reg, &regval);
-		if (!rv)
-			ccprintf("0x%04x\n", regval);
-		else
+		if (rv)
 			ccprintf("ERR (%d)\n", rv);
 		regs[index] = regval;
 		index++;
@@ -1480,9 +1478,7 @@ static enum ec_error_list command_isl9241_dump_get(int chgnum, uint32_t *regs, i
 	// 8
 	for (reg = 0x38; reg <= 0x40; reg++) {
 		rv = isl9241_read(chgnum, reg, &regval);
-		if (!rv)
-			ccprintf("0x%04x\n", regval);
-		else
+		if (rv)
 			ccprintf("ERR (%d)\n", rv);
 		regs[index] = regval;
 		index++;
@@ -1490,9 +1486,7 @@ static enum ec_error_list command_isl9241_dump_get(int chgnum, uint32_t *regs, i
 	// 1
 	for (reg = 0x43; reg <= 0x43; reg++) {
 		rv = isl9241_read(chgnum, reg, &regval);
-		if (!rv)
-			ccprintf("0x%04x\n", regval);
-		else
+		if (rv)
 			ccprintf("ERR (%d)\n", rv);
 		regs[index] = regval;
 		index++;
@@ -1501,9 +1495,7 @@ static enum ec_error_list command_isl9241_dump_get(int chgnum, uint32_t *regs, i
 	// 8
 	for (reg = 0x47; reg <= 0x4F; reg++) {
 		rv = isl9241_read(chgnum, reg, &regval);
-		if (!rv)
-			ccprintf("0x%04x\n", regval);
-		else
+		if (rv)
 			ccprintf("ERR (%d)\n", rv);
 		regs[index] = regval;
 		index++;
@@ -1512,9 +1504,7 @@ static enum ec_error_list command_isl9241_dump_get(int chgnum, uint32_t *regs, i
 	// 8
 	for (reg = 0x80; reg <= 0x87; reg++) {
 		rv = isl9241_read(chgnum, reg, &regval);
-		if (!rv)
-			ccprintf("0x%04x\n", regval);
-		else
+		if (rv)
 			ccprintf("ERR (%d)\n", rv);
 		regs[index] = regval;
 		index++;
@@ -1523,9 +1513,7 @@ static enum ec_error_list command_isl9241_dump_get(int chgnum, uint32_t *regs, i
 	// 2
 	for (reg = 0x90; reg <= 0x91; reg++) {
 		rv = isl9241_read(chgnum, reg, &regval);
-		if (!rv)
-			ccprintf("0x%04x\n", regval);
-		else
+		if (rv)
 			ccprintf("ERR (%d)\n", rv);
 		regs[index] = regval;
 		index++;
@@ -1534,14 +1522,12 @@ static enum ec_error_list command_isl9241_dump_get(int chgnum, uint32_t *regs, i
 	// 2
 	for (reg = 0xFE; reg <= 0xFF; reg++) {
 		rv = isl9241_read(chgnum, reg, &regval);
-		if (!rv)
-			ccprintf("0x%04x\n", regval);
-		else
+		if (rv)
 			ccprintf("ERR (%d)\n", rv);
 		regs[index] = regval;
 		index++;
 	}
-	ccprintf("index=%d\n", index);
+	//ccprintf("index=%d\n", index);
 	// Total: 2 + 9 + 1 + 9 + 8 + 2 + 2 = 33
 	cflush();
 	return EC_SUCCESS;
