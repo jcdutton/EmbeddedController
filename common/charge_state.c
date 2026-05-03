@@ -83,6 +83,8 @@ static unsigned int user_current_limit = -1U;
 test_export_static timestamp_t shutdown_target_time;
 static timestamp_t precharge_start_time;
 static struct sustain_soc sustain_soc;
+static struct sustain_soc3 sustain_soc3[4];
+int sustain3_slot = 0;
 static struct current_limit {
 	uint32_t value; /* Charge limit to apply, in mA */
 	int soc; /* Minimum battery SoC at which the limit will be applied. */
@@ -210,6 +212,10 @@ int battery_sustainer_set(int8_t lower, int8_t upper)
 			CPRINTS("Sustainer enabled: %d ~ %d%%", lower, upper);
 		sustain_soc.lower = lower;
 		sustain_soc.upper = upper;
+ 		CPRINTS("Sustainer set: %d%% ~ %d%%", lower, upper);
+		sustain_soc3[0].lower = lower;
+		sustain_soc3[0].upper = upper;
+		sustain_soc3[0].discharge = -1;
 		return EC_SUCCESS;
 	}
 
@@ -313,6 +319,14 @@ static void dump_charge_state(void)
 	ccprintf("Battery sustainer = %s (%d%% ~ %d%%)\n",
 		 battery_sustainer_enabled() ? "on" : "off", sustain_soc.lower,
 		 sustain_soc.upper);
+	ccprintf("Sustainer slot = %d\n", sustain3_slot);
+	for (int n = 0; n < 4; n++) {
+		ccprintf("Sustainer slot[%d] (%d%% ~ %d%% - %d%%)\n", 
+			n,
+			sustain_soc3[n].lower,
+			sustain_soc3[n].upper,
+			sustain_soc3[n].discharge);
+	}
 #undef DUMP
 }
 
@@ -892,11 +906,26 @@ int battery_outside_charging_temperature(void)
 	return 0;
 }
 
+int sustain3_is_slot_valid(int slot) {
+	if (slot < 0 || slot >= 4) {
+		return 0;
+	}
+	if ((sustain_soc3[slot].lower == -1) || 
+		(sustain_soc3[slot].upper == -1)) {
+		return 0;
+	}
+	if ((sustain_soc3[slot].lower == 0) || 
+		(sustain_soc3[slot].upper == 0)) {
+		return 0;
+	}
+	return 1;
+}
+
 static enum ec_charge_control_mode
 sustain_switch_mode(enum ec_charge_control_mode mode)
 {
 	enum ec_charge_control_mode new_mode = mode;
-	int soc = charge_get_display_charge() / 10;
+	int soc = (charge_get_display_charge() + 5) / 10;
 
 	/*
 	 * The sustain range is defined by 'lower' and 'upper' where the equal
@@ -921,54 +950,68 @@ sustain_switch_mode(enum ec_charge_control_mode mode)
 	 * makes the sustainer use DISCHARGE instead of IDLE. This is done by
 	 * setting lower != upper in V2, which doesn't support the flag.
 	 */
+
+	/*
+	 * Slot 0 is the parameters set by the BIOS
+	 * Slot 1 is the parameters set by the user. e.g. with ectool
+	 * Slot 2 is the battery_extender stage 1
+	 * Slot 3 is the battery_extender stage 2
+	 */
+	int slot = sustain3_slot;
+	if (slot < 0 || slot >= 4) {
+		slot = 0;
+	}
+	// If the current slot is invalid, switch back to slot 0
+	// If slot == 0, and slot 1 is valid, switch to slot 1
+	if (!sustain3_is_slot_valid(slot))  {
+		slot = 0;
+	}
+	if (slot == 0) {
+		if (sustain3_is_slot_valid(1))  {
+			slot = 1;
+		} else {
+			slot = 0;
+		}
+	}
+	sustain3_slot = slot;
+	int discharge = sustain_soc3[slot].discharge;
+	if (discharge <= sustain_soc3[slot].upper) discharge = 126;
+	// By default, don't change mode
+	new_mode = mode;
 	switch (mode) {
 	case CHARGE_CONTROL_NORMAL:
 		/* Currently charging */
-		if (sustain_soc.upper < soc) {
+		if (soc >= discharge) {
+			new_mode = CHARGE_CONTROL_DISCHARGE;
+		} else if (soc >= sustain_soc3[slot].upper) {
 			/*
 			 * We come here only if the soc is already above the
 			 * upper limit at the time the sustainer started.
 			 */
-			//new_mode = CHARGE_CONTROL_DISCHARGE;
 			new_mode = CHARGE_CONTROL_IDLE;
-		} else if (sustain_soc.upper == soc) {
-			/*
-			 * We've been charging and finally reached the upper.
-			 * Let's switch to IDLE to stay.
-			 */
-			//if (sustain_soc.flags & EC_CHARGE_CONTROL_FLAG_NO_IDLE)
-			//	new_mode = CHARGE_CONTROL_DISCHARGE;
-			//else
-				new_mode = CHARGE_CONTROL_IDLE;
 		}
 		break;
 	case CHARGE_CONTROL_IDLE:
-		/* Discharging naturally */
-		if (soc < sustain_soc.lower)
+		if (soc >= discharge) {
+			new_mode = CHARGE_CONTROL_DISCHARGE;
+		if (soc <= sustain_soc3[slot].lower)
 			/*
 			 * Presumably, we stayed in the sustain range for a
 			 * while but finally fell off the range. Let's charge to
 			 * the upper.
 			 */
 			new_mode = CHARGE_CONTROL_NORMAL;
-		else if (sustain_soc.upper < soc)
-			/*
-			 * This can happen only if sustainer is restarted with
-			 * decreased upper limit. Let's discharge to the upper.
-			 */
-			//new_mode = CHARGE_CONTROL_DISCHARGE;
-			new_mode = CHARGE_CONTROL_IDLE;
+		}
 		break;
 	case CHARGE_CONTROL_DISCHARGE:
 		/* Discharging actively. */
-		if (soc <= sustain_soc.upper &&
-		    !(sustain_soc.flags & EC_CHARGE_CONTROL_FLAG_NO_IDLE))
+		if (soc <= sustain_soc3[slot].upper)
 			/*
 			 * Normal case. We've been discharging and finally
 			 * reached the upper. Let's switch to IDLE to stay.
 			 */
 			new_mode = CHARGE_CONTROL_IDLE;
-		else if (soc < sustain_soc.lower)
+		else if (soc <= sustain_soc3[slot].lower)
 			/*
 			 * This can happen only if sustainer is restarted with
 			 * increase lower limit. Let's charge to the upper (then
@@ -2087,6 +2130,36 @@ charge_command_charge_control(struct host_cmd_handler_args *args)
 }
 DECLARE_HOST_COMMAND(EC_CMD_CHARGE_CONTROL, charge_command_charge_control,
 		     EC_VER_MASK(2) | EC_VER_MASK(3));
+
+
+static enum ec_status
+charge_command_charge_control3(struct host_cmd_handler_args *args)
+{
+	const struct ec_params_charge_control3 *p = args->params;
+	struct ec_response_charge_control3 *r = args->response;
+
+	if (p->cmd == EC_CHARGE_CONTROL_CMD_SET) {
+		int slot = p->slot;
+		sustain_soc3[slot].lower = p->sustain_soc3.lower;
+		sustain_soc3[slot].upper = p->sustain_soc3.upper;
+		sustain_soc3[slot].discharge = p->sustain_soc3.discharge;
+	} else if (p->cmd == EC_CHARGE_CONTROL_CMD_GET) {
+		for (int n = 0; n < 4; n++) {
+			r->slot = sustain3_slot;
+			r->sustain_soc3[n].lower = sustain_soc3[n].lower;
+			r->sustain_soc3[n].upper = sustain_soc3[n].upper;
+			r->sustain_soc3[n].discharge = sustain_soc3[n].discharge;
+		}
+		args->response_size = sizeof(*r);
+		return EC_RES_SUCCESS;
+	} else {
+		return EC_RES_INVALID_PARAM;
+	}
+
+	return EC_RES_SUCCESS;
+}
+DECLARE_HOST_COMMAND(EC_CMD_CHARGE_CONTROL3, charge_command_charge_control3,
+		     EC_VER_MASK(3));
 
 static enum ec_status
 charge_command_current_limit(struct host_cmd_handler_args *args)
