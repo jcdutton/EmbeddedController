@@ -40,6 +40,8 @@ enum clear_reasons {
 	PROCHOT_CLEAR_REASON_FORCE,
 };
 
+extern const char *mode_text[];
+
 void update_power_limit_thermal_value(struct pmf_data *pmf)
 {
 	power_limit[FUNCTION_THERMAL_PMF].mwatt[TYPE_P3T] = pmf->P3T * 1000;
@@ -159,10 +161,18 @@ static int update_safety_power_limit(int active_mpower)
 	case LEVEL_STOP_CHARGE:
 		/* stop charging */
 		if (level_increase) {
-			set_chg_ctrl_mode(CHARGE_CONTROL_IDLE);
+			int rv = set_chg_ctrl_mode(CHARGE_CONTROL_IDLE);
+			CPRINTS("%s: %s control mode to %s, rv=%d", __func__,
+				rv == EC_SUCCESS ? "Switched" : "Failed to switch",
+				mode_text[CHARGE_CONTROL_IDLE],
+				rv);
 			safety_level++;
 		} else {
-			set_chg_ctrl_mode(CHARGE_CONTROL_NORMAL);
+			int rv = set_chg_ctrl_mode(CHARGE_CONTROL_NORMAL);
+			CPRINTS("%s: %s control mode to %s, rv=%d", __func__,
+				rv == EC_SUCCESS ? "Switched" : "Failed to switch",
+				mode_text[CHARGE_CONTROL_NORMAL],
+				rv);
 			if (safety_level > 0)
 				safety_level--;
 		}

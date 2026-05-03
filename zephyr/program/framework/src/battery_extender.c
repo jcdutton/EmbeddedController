@@ -41,6 +41,8 @@ enum battery_extender_stage_t {
 	BATT_EXTENDER_STAGE_2,
 };
 
+extern const char *mode_text[];
+
 static bool batt_extender_disable;
 static uint64_t battery_extender_trigger = 5*DAY;
 static uint64_t battery_extender_reset = 30*MINUTE;
@@ -77,8 +79,12 @@ int charger_sustainer_percentage(void)
 void charger_sustainer_reset(void)
 {
 	old_charger_limit = 0;
-	battery_sustainer_set(-1, -1);
-	set_chg_ctrl_mode(CHARGE_CONTROL_NORMAL);
+	//battery_sustainer_set(-1, -1);
+	int rv = set_chg_ctrl_mode(CHARGE_CONTROL_NORMAL);
+	CPRINTS("%s: %s control mode to %s, rv=%d", __func__,
+		rv == EC_SUCCESS ? "Switched" : "Failed to switch",
+		mode_text[CHARGE_CONTROL_NORMAL],
+		rv);
 }
 
 static void battery_percentage_control(void)
@@ -99,7 +105,7 @@ static void battery_percentage_control(void)
 	if (old_charger_limit != charging_maximum_level) {
 		old_charger_limit = charging_maximum_level;
 		battery_sustainer_set(MAX(20, (charging_maximum_level - 5)),
-			MAX(20, charging_maximum_level));
+			MAX(25, charging_maximum_level));
 	}
 }
 
