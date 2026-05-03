@@ -6,7 +6,8 @@ file(SHA256 ${INPUT_FILE} npcx_monitor_hash)
 
 if ("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "coreboot-sdk")
   # Coreboot builds
-  set(expected_hash "331629c64ef65caef1b23f0f29474f13d9b41447408a70b6e4260310801d324d")
+  set(expected_hash "493ffb0a0f68892c64eb4bd75c7c4bf4002f1c2be6ca3bcb1f2b7f164e64da93")
+  # set(expected_hash "331629c64ef65caef1b23f0f29474f13d9b41447408a70b6e4260310801d324d")
 elseif ("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "zephyr")
   # Zephyr builds
   set(expected_hash "2a4abad66294d175ad82542f5be35af3802d9df5e12c58c9835a15e0886f78dd")

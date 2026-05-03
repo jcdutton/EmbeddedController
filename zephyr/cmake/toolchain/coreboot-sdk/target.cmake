@@ -9,10 +9,12 @@ set(BINTOOLS gnu)
 
 # Mapping of Zephyr architecture -> ec-coreboot-sdk toolchain
 set(CROSS_COMPILE_TARGET_arm    arm-eabi)
+set(CROSS_COMPILE_TARGET2_arm    arm-zephyr-eabi)
 set(CROSS_COMPILE_TARGET_riscv  riscv64-elf)
 set(CROSS_COMPILE_TARGET_x86    i386-elf)
 
 set(CROSS_COMPILE_TARGET        ${CROSS_COMPILE_TARGET_${ARCH}})
+set(CROSS_COMPILE_TARGET2        ${CROSS_COMPILE_TARGET2_${ARCH}})
 set(CROSS_COMPILE_QUALIFIER     "")
 
 if("${ARCH}" STREQUAL "arm")
@@ -23,6 +25,8 @@ if("${ARCH}" STREQUAL "arm")
 elseif("${ARCH}" STREQUAL "x86" AND CONFIG_X86_64)
   set(CROSS_COMPILE_TARGET      x86_64-elf)
 endif()
+
+set(COREBOOT_SDK_ROOT_arm "/opt/zephyr-sdk-1.0.1/gnu/arm-zephyr-eabi")
 
 if(DEFINED COREBOOT_SDK_ROOT_${ARCH})
   set(COREBOOT_SDK_ROOT "${COREBOOT_SDK_ROOT_${ARCH}}")
@@ -36,7 +40,7 @@ endif()
 set(CC gcc)
 set(C++ g++)
 set(TOOLCHAIN_HOME "${COREBOOT_SDK_ROOT}/bin")
-set(CROSS_COMPILE "${CROSS_COMPILE_TARGET}-")
+set(CROSS_COMPILE "${CROSS_COMPILE_TARGET2}-")
 
 set(CMAKE_AR         "${TOOLCHAIN_HOME}/${CROSS_COMPILE}ar")
 set(CMAKE_NM         "${TOOLCHAIN_HOME}/${CROSS_COMPILE}nm")
@@ -47,7 +51,7 @@ set(CMAKE_READELF    "${TOOLCHAIN_HOME}/${CROSS_COMPILE}readelf")
 set(CMAKE_GCOV       "${TOOLCHAIN_HOME}/${CROSS_COMPILE}gcov")
 
 # Compiler version isn't set yet, infer it from the directory name
-file(GLOB GCC_DIR LIST_DIRECTORIES true "${COREBOOT_SDK_ROOT}/lib/gcc/${CROSS_COMPILE_TARGET}/[0-9][0-9].[0-9].[0-9]")
+file(GLOB GCC_DIR LIST_DIRECTORIES true "${COREBOOT_SDK_ROOT}/lib/gcc/${CROSS_COMPILE_TARGET2}/[0-9][0-9].[0-9].[0-9]")
 get_filename_component(GCC_VERSION ${GCC_DIR} NAME)
 
   ##########################################################################################################

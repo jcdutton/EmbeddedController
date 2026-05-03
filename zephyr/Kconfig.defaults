@@ -53,7 +53,8 @@ config OUTPUT_DISASSEMBLY
 config SHELL_BACKEND_SERIAL_INIT_PRIORITY
 	default 51
 
-config I2C_ALLOW_NO_STOP_TRANSACTIONS
-	default y
+#config I2C_ALLOW_NO_STOP_TRANSACTIONS
+#	bool
+#	default y
 
 orsource "Kconfig.defaults-$(ARCH)"
