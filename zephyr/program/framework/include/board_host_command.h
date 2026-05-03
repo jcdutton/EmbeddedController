@@ -678,4 +678,6 @@ struct ec_response_read_boardid {
 	int8_t board_id;
 } __ec_align1;
 
+#define EC_CMD_CHAN	0x3E80  // Added by JCD
+
 #endif /* __BOARD_HOST_COMMAND_H */
