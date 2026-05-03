@@ -4976,6 +4976,9 @@ enum charge_state_params {
 	 */
 	CS_PARAM_LIMIT_POWER,
 
+	/* Battery Temperature in Kelvin (READ ONLY) */
+	CS_PARAM_BATT_TEMP,
+
 	/* min value of charger voltage limit (READ ONLY) */
 	CS_PARAM_CHG_VOLTAGE_MIN,
 

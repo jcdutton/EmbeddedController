@@ -2200,6 +2200,9 @@ charge_command_charge_state(struct host_cmd_handler_args *args)
 #endif
 					val = 0;
 				break;
+			case CS_PARAM_BATT_TEMP:
+				val = curr.batt.temperature;
+				break;
 			case CS_PARAM_CHG_VOLTAGE_MIN:
 				val = info->voltage_min;
 				break;
@@ -2263,6 +2266,7 @@ charge_command_charge_state(struct host_cmd_handler_args *args)
 				break;
 			case CS_PARAM_CHG_STATUS:
 			case CS_PARAM_LIMIT_POWER:
+			case CS_PARAM_BATT_TEMP:
 			case CS_PARAM_CHG_VOLTAGE_MIN:
 			case CS_PARAM_CHG_VOLTAGE_MAX:
 			case CS_PARAM_CHG_VOLTAGE_STEP:
