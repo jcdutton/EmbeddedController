@@ -828,16 +828,20 @@ static void charge_manager_refresh(void)
 	while (1) {
 		charge_manager_get_best_port(&new_port, &new_supplier);
 
-		if (!left_safe_mode && new_port == CHARGE_PORT_NONE)
-			return;
+		// JCD: Comment out because it prevented Power adapter remove processing
+		//if (!left_safe_mode && new_port == CHARGE_PORT_NONE) {
+		//	CPRINTS("%s JCD1", __FUNCTION__);
+		//	return;
+		//}
 
 		/*
 		 * If the port and the supplier are the same, don't (attempt to)
 		 * switch to the port unless active charge port hasn't been set.
 		 */
 		if (active_charge_port_initialized && new_port == charge_port &&
-		    new_supplier == charge_supplier)
+		    new_supplier == charge_supplier) {
 			break;
+		}
 
 		/*
 		 * For OCPC systems, reset the OCPC state to prevent current

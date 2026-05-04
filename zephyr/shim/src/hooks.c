@@ -130,6 +130,10 @@ void hook_notify(enum hook_type type)
 	const struct zephyr_shim_hook_info *end = hook_registry[type].end;
 	int last_prio = HOOK_PRIO_FIRST - 1;
 
+	//CPRINTS("hook notify2 %d", type);
+	//cprints(CC_HOOK,
+	//	"hook notify2 %d  AC:%d PD_DISC:%d PD_CONN:%d PSU_Change:%d", type, HOOK_AC_CHANGE, HOOK_USB_PD_DISCONNECT, HOOK_USB_PD_CONNECT, HOOK_POWER_SUPPLY_CHANGE);
+
 	__ASSERT(type >= 0 && type < HOOK_TYPE_COUNT,
 		 "hook type %d is out of range (maximum hook_type value %d)",
 		 type, HOOK_TYPE_COUNT);

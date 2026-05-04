@@ -732,10 +732,10 @@ int i2c_read_sized_block(const int port, const uint16_t addr_flags, int offset,
 		if (rv)
 			continue;
 
-		if (block_length > max_len)
+		if ((block_length + 1) > max_len)
 			data_length = max_len;
 		else
-			data_length = block_length;
+			data_length = block_length + 1;
 
 		if (IS_ENABLED(CONFIG_SMBUS_PEC) && I2C_USE_PEC(addr_flags)) {
 			uint8_t addr_8bit = I2C_STRIP_FLAGS(addr_flags) << 1;
@@ -800,7 +800,16 @@ int i2c_read_string(const int port, const uint16_t addr_flags, int offset,
 
 	rv = i2c_read_sized_block(port, addr_flags, offset, data, len - 1,
 				  &read_len);
-	data[read_len] = 0;
+	//CPRINTS("i2c_read_string: rv = %d, read_len = %d",
+	//	rv, read_len);
+	for (int n = 0; (n < read_len) && (n < (len - 1)); n++) {
+		data[n] = data[n + 1];
+	}
+	if ((read_len < (len - 1)) && (read_len > 0)) {
+		data[read_len - 1] = 0;
+	} else {
+		data[len - 1] = 0;
+	}
 	return rv;
 }
 

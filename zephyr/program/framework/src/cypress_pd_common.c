@@ -2006,7 +2006,7 @@ void cypd_port_int(int controller, int port)
 			power_button_simulate_press(1);
 			alert_press = 0;
 		}
-		CPRINTS("PORT_DISCONNECT");
+		CPRINTS("CYPD_RESPONSE_PORT_DISCONNECT %d", port_idx);
 		__fallthrough;
 	case CCG_RESPONSE_HARD_RESET_RX:
 	case CCG_RESPONSE_TYPE_C_ERROR_RECOVERY:

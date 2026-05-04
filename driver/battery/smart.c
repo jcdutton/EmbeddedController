@@ -113,7 +113,19 @@ int sb_read_string(int offset, uint8_t *data, int len)
 
 	ADDR_FLAGS_FOR_PEC(&addr_flags);
 
-	return i2c_read_string(I2C_PORT_BATTERY, addr_flags, offset, data, len);
+	int tmp = i2c_read_string(I2C_PORT_BATTERY, addr_flags, offset, data, len);
+	// The string from the i2c has a length value as the first byte of the string. shift left to remove the length value
+	//for (int n = 0; n < (len - 1); n++) {
+	//	data[n] = data[n + 1];
+	//}
+	//CPRINTS("sb_read_string len %d tmp %d", len, tmp);
+	//for (int n = 0; n < 32; n++) {
+	//	CPRINTS("0x%02X ", data[n]);
+	//	if (data[n] == 0) {
+	//		break;
+	//	}
+	//}
+	return tmp;
 }
 
 int sb_read_sized_block(int offset, uint8_t *data, int len)
