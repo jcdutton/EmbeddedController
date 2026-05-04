@@ -736,8 +736,11 @@ DECLARE_HOOK(HOOK_TICK, system_check_ssd_status, HOOK_PRIO_DEFAULT);
 
 void chipset_throttle_cpu(int throttle)
 {
-	if (chipset_in_state(CHIPSET_STATE_ON))
+	CPRINTS("chipset_throttle_cpu: cpu prochot throttle %d lotus", throttle);
+	if (chipset_in_state(CHIPSET_STATE_ON)) {
+		CPRINTS("chipset_in_state: cpu prochot throttle %d  !%d lotus", throttle, !throttle);
 		gpio_pin_set_dt(GPIO_DT_FROM_NODELABEL(gpio_h_prochot_l), !throttle);
+	}
 }
 
 static void usb30_hub_reset(void)

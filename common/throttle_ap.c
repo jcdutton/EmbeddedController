@@ -78,8 +78,8 @@ void throttle_ap(enum throttle_level level, enum throttle_type type,
 	mutex_unlock(&throttle_mutex);
 
 	/* print outside the mutex */
-	CPRINTS("set AP throttling type %d to %s (0x%08x)", type,
-		tmpval ? "on" : "off", tmpval);
+	CPRINTS("set AP throttling type %d (source %d) to %s (0x%08x)", type, source,
+		level ? "on" : "off", tmpval);
 }
 
 void throttle_ap_config_prochot(const struct prochot_cfg *cfg)
@@ -205,6 +205,49 @@ static int command_apthrottle(int argc, const char **argv)
 }
 DECLARE_CONSOLE_COMMAND(apthrottle, command_apthrottle, NULL,
 			"Display the AP throttling state");
+
+
+
+static int command_apthrottle_set(int argc, const char **argv)
+{
+	int i;
+	uint32_t tmpval;
+
+	if (argc != 4) {
+		return EC_ERROR_PARAM_COUNT;
+	}
+	char *e;
+	int level = strtoi(argv[1], &e, 0);
+	if (*e )
+		return EC_ERROR_PARAM2;
+
+	int type = strtoi(argv[2], &e, 0);
+	if (*e || type < 0 || type >= NUM_THROTTLE_TYPES)
+		return EC_ERROR_PARAM2;
+
+	int source = strtoi(argv[3], &e, 0);
+	if (*e )
+		return EC_ERROR_PARAM2;
+	
+	ccprintf("calling throttle_ap(%d, %d, %d)\n",
+			level,
+			type,
+			source);
+	throttle_ap(level, type, source);
+
+	for (i = 0; i < NUM_THROTTLE_TYPES; i++) {
+		mutex_lock(&throttle_mutex);
+		tmpval = throttle_request[i];
+		mutex_unlock(&throttle_mutex);
+
+		ccprintf("AP throttling type %d is %s (0x%08x)\n", i,
+			 tmpval ? "on" : "off", tmpval);
+	}
+
+	return EC_SUCCESS;
+}
+DECLARE_CONSOLE_COMMAND(apthrottleset, command_apthrottle_set, NULL,
+			"Set the AP throttling state");
 #endif
 
 #ifdef CONFIG_CUSTOMIZED_DESIGN
