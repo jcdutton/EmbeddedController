@@ -27,6 +27,7 @@ elseif("${ARCH}" STREQUAL "x86" AND CONFIG_X86_64)
 endif()
 
 set(COREBOOT_SDK_ROOT_arm "/opt/zephyr-sdk-1.0.1/gnu/arm-zephyr-eabi")
+# set(COREBOOT_SDK_ROOT_arm "/opt/zephyr-sdk-0.16.5-1/arm-zephyr-eabi")
 
 if(DEFINED COREBOOT_SDK_ROOT_${ARCH})
   set(COREBOOT_SDK_ROOT "${COREBOOT_SDK_ROOT_${ARCH}}")
