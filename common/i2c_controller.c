@@ -185,6 +185,87 @@ static int i2c_xfer_no_retry(const int port, const uint16_t addr_flags,
 }
 #endif /* CONFIG_I2C_XFER_LARGE_TRANSFER */
 
+int i2c_xfer_unlocked_out2(const int port, const uint16_t addr_flags,
+		      const uint8_t *out1, int out1_size, const uint8_t *out2,
+		      int out2_size, int flags)
+{
+	int i;
+	int ret = EC_SUCCESS;
+	uint16_t no_pec_af = addr_flags & ~I2C_FLAG_PEC;
+
+	if (!i2c_port_is_locked(port)) {
+		CPUTS("Access I2C without lock!");
+		return EC_ERROR_INVAL;
+	}
+
+	for (i = 0; i <= CONFIG_I2C_NACK_RETRY_COUNT; i++) {
+#ifdef CONFIG_ZEPHYR
+		struct i2c_msg msg[2];
+		int num_msgs = 0;
+
+		/* Be careful to respect the flags passed in */
+		if (out1_size) {
+			unsigned int wflags = I2C_MSG_WRITE;
+
+			msg[num_msgs].buf = (uint8_t *)out1;
+			msg[num_msgs].len = out1_size;
+
+			/* If this is the last write, add a stop */
+			//if (!in_size && (flags & I2C_XFER_STOP))
+			//	wflags |= I2C_MSG_STOP;
+			msg[num_msgs].flags = wflags;
+			num_msgs++;
+		}
+		if (out2_size) {
+			unsigned int wflags = I2C_MSG_WRITE;
+
+			msg[num_msgs].buf = (uint8_t *)out2;
+			msg[num_msgs].len = out2_size;
+
+			/* If a stop is requested, add it */
+			if (flags & I2C_XFER_STOP)
+				wflags |= I2C_MSG_STOP;
+
+			msg[num_msgs].flags = wflags;
+			num_msgs++;
+		}
+
+		/* Big endian flag is used in wrappers for this call */
+		if (no_pec_af & ~(I2C_ADDR_MASK | I2C_FLAG_BIG_ENDIAN |
+						I2C_FLAG_ADDR16_LITTLE_ENDIAN))
+			CPRINTF("Ignoring flags from i2c addr_flags: %04x",
+				no_pec_af);
+
+		ret = i2c_transfer(i2c_get_device_for_port(port), msg, num_msgs,
+				   I2C_STRIP_FLAGS(no_pec_af));
+
+		//if (IS_ENABLED(CONFIG_I2C_DEBUG)) {
+		//	i2c_trace_notify(port, addr_flags, out1, out1_size, in,
+		//			 in_size, ret);
+		//}
+
+		switch (ret) {
+		case 0:
+			return EC_SUCCESS;
+		case -EIO:
+			ret = EC_ERROR_INVAL;
+			continue;
+		default:
+			return EC_ERROR_UNKNOWN;
+		}
+#elif defined(CONFIG_I2C_XFER_LARGE_TRANSFER)
+		ret = i2c_xfer_no_retry(port, no_pec_af, out, out_size, in,
+					in_size, flags);
+#else
+		ret = chip_i2c_xfer_with_notify(port, no_pec_af, out, out_size,
+						in, in_size, flags);
+#endif /* CONFIG_I2C_XFER_LARGE_TRANSFER */
+		if (ret != EC_ERROR_BUSY)
+			break;
+	}
+	return ret;
+}
+
 int i2c_xfer_unlocked(const int port, const uint16_t addr_flags,
 		      const uint8_t *out, int out_size, uint8_t *in,
 		      int in_size, int flags)
@@ -676,7 +757,7 @@ int i2c_read_offset16_block(const int port, const uint16_t addr_flags,
 	return i2c_xfer(port, addr_flags, addr, 2, data, len);
 }
 
-int i2c_write_offset16_block(const int port, const uint16_t addr_flags,
+int i2c_write_offset16_block_bad(const int port, const uint16_t addr_flags,
 			     uint16_t offset, const uint8_t *data, int len)
 {
 	int rv;
@@ -700,6 +781,35 @@ int i2c_write_offset16_block(const int port, const uint16_t addr_flags,
 	if (!rv)
 		rv = i2c_xfer_unlocked(port, addr_flags, data, len, NULL, 0,
 				       I2C_XFER_STOP);
+	i2c_lock(port, 0);
+
+	return rv;
+}
+
+int i2c_write_offset16_block(const int port, const uint16_t addr_flags,
+			     uint16_t offset, const uint8_t *data, int len)
+{
+	int rv;
+	uint8_t addr[sizeof(uint16_t)];
+
+	if (I2C_IS_ADDR16_LITTLE_ENDIAN(addr_flags)) {
+		addr[0] = offset & 0xff;
+		addr[1] = (offset >> 8) & 0xff;
+	} else {
+		addr[0] = (offset >> 8) & 0xff;
+		addr[1] = offset & 0xff;
+	}
+
+	/*
+	 * Split into two transactions to avoid the stack space consumption of
+	 * appending the destination address with the data array.
+	 */
+	i2c_lock(port, 1);
+	rv = i2c_xfer_unlocked_out2(port, addr_flags, addr, 2, data, len,
+			       I2C_XFER_STOP);
+	//if (!rv)
+	//	rv = i2c_xfer_unlocked(port, addr_flags, data, len, NULL, 0,
+	//			       I2C_XFER_STOP);
 	i2c_lock(port, 0);
 
 	return rv;
