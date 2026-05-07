@@ -470,13 +470,9 @@ static int platform_ec_i2c_write(const int port, const uint16_t addr_flags,
 
 		i2c_lock(port, 1);
 		for (i = 0; i <= CONFIG_I2C_NACK_RETRY_COUNT; i++) {
-			rv = i2c_xfer_unlocked(port, addr_flags, out, out_size,
-					       NULL, 0, I2C_XFER_START);
-			if (rv)
-				continue;
-
-			rv = i2c_xfer_unlocked(port, addr_flags, &pec, 1, NULL,
-					       0, I2C_XFER_STOP);
+			// Collapse to a single i2c_transfer()
+			rv = i2c_xfer_unlocked_out2(port, addr_flags, out, out_size,
+					&pec, 1, I2C_XFER_STOP);
 			if (!rv)
 				break;
 		}
