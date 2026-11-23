@@ -18,6 +18,7 @@
 #include "i2c.h"
 #include "power.h"
 #include "raa489300.h"
+#include "system.h"
 #include "task.h"
 #include "ucsi.h"
 #include "usb_pd.h"
@@ -196,6 +197,21 @@ int cypd_setup(int controller)
 }
 
 enum power_state pd_prev_power_state = POWER_G3;
+
+/* Whether the AP has been out of G3 since this EC image started. */
+static bool ap_left_g3;
+
+/*
+ * Whether the PD controllers powered up together with this EC image, which is
+ * the case after a power-on reset of the EC which was not followed by a
+ * sysjump. After a sysjump or another EC reset they kept running.
+ */
+static bool pd_controllers_started_with_ec(void)
+{
+	return (system_get_reset_flags() & EC_RESET_FLAG_POWER_ON) &&
+	       !system_jumped_to_this_image();
+}
+
 void update_system_power_state(int controller)
 {
 	enum power_state ps = power_get_state();
@@ -205,11 +221,23 @@ void update_system_power_state(int controller)
 	if (!cypd_contoller_is_powered(controller))
 		return;
 
+	if (ps != POWER_G3 && ps != POWER_S5G3)
+		ap_left_g3 = true;
+
 	switch (ps) {
 	case POWER_G3:
 	case POWER_S5G3:
 		pd_prev_power_state = POWER_G3;
-		cypd_set_power_state(CCG_POWERSTATE_G3, controller);
+		/*
+		 * Controllers which kept running, told G3 by an EC image
+		 * which starts with the AP off, stop detecting partners on
+		 * their ports until they lose power. So such an image leaves
+		 * them in their state until the AP leaves G3, unless they
+		 * powered up together with it, and tells them G3 once the AP
+		 * enters it.
+		 */
+		if (ap_left_g3 || pd_controllers_started_with_ec())
+			cypd_set_power_state(CCG_POWERSTATE_G3, controller);
 		break;
 	case POWER_S5:
 	case POWER_S3S5:
